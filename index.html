@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2 Player Car Racing</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#101827;color:white;
+ font-family:Arial;text-align:center;
+}
+h1{color:#ffd43b}
+.game{
+ display:flex;justify-content:center;
+ gap:20px;flex-wrap:wrap;padding:10px;
+}
+.track{
+ width:300px;height:480px;
+ background:#444;position:relative;
+ overflow:hidden;border:6px solid white;
+ border-radius:12px;
+}
+.line{
+ position:absolute;left:50%;height:100%;
+ border-left:5px dashed white;
+ animation:road 0.5s linear infinite;
+}
+@keyframes road{
+ from{transform:translateY(-30px)}
+ to{transform:translateY(30px)}
+}
+.car{
+ position:absolute;width:48px;height:75px;
+ bottom:20px;border-radius:12px;
+ font-size:30px;display:flex;
+ align-items:center;justify-content:center;
+}
+#car1{background:red;left:65px}
+#car2{background:blue;left:175px}
+.obstacle{
+ position:absolute;width:48px;height:65px;
+ background:orange;border-radius:10px;
+ font-size:30px;text-align:center;
+}
+.info{font-size:20px;margin:10px}
+button{
+ padding:12px 22px;border:0;border-radius:10px;
+ background:#ffd43b;font-size:17px;
+ font-weight:bold;margin:8px;cursor:pointer;
+}
+.controls{margin:15px}
+.controls button{background:#263c60;color:white}
+</style>
+</head>
+<body>
+
+<h1>🏎️ 2 PLAYER CAR RACING 🏎️</h1>
+<div class="info">
+ Player 1: WASD 🔴 |
+ Player 2: Arrow Keys 🔵
+</div>
+
+<div class="game">
+ <div>
+  <h2>🔴 Player 1</h2>
+  <div class="track" id="track1">
+   <div class="line"></div>
+   <div class="car" id="car1">🏎️</div>
+  </div>
+  <div class="info">Score: <span id="score1">0</span></div>
+ </div>
+
+ <div>
+  <h2>🔵 Player 2</h2>
+  <div class="track" id="track2">
+   <div class="line"></div>
+   <div class="car" id="car2">🏎️</div>
+  </div>
+  <div class="info">Score: <span id="score2">0</span></div>
+ </div>
+</div>
+
+<h2 id="message">Press START to Race!</h2>
+<button onclick="startGame()">▶ START GAME</button>
+<button onclick="location.reload()">🔄 RESTART</button>
+
+<div class="controls">
+ <p>Mobile Controls</p>
+ <button onclick="move(1,-1)">P1 ◀</button>
+ <button onclick="move(1,1)">P1 ▶</button>
+ <button onclick="move(2,-1)">P2 ◀</button>
+ <button onclick="move(2,1)">P2 ▶</button>
+</div>
+
+<script>
+let running=false;
+let positions=[65,175];
+let scores=[0,0];
+let obstacles=[];
+let speed=5;
+let timer;
+
+function move(player,direction){
+ if(!running)return;
+ let i=player-1;
+ positions[i]+=direction*20;
+ positions[i]=Math.max(5,Math.min(245,positions[i]));
+ document.getElementById("car"+player).style.left=positions[i]+"px";
+}
+
+document.addEventListener("keydown",e=>{
+ if(e.key.toLowerCase()==="a")move(1,-1);
+ if(e.key.toLowerCase()==="d")move(1,1);
+ if(e.key==="ArrowLeft")move(2,-1);
+ if(e.key==="ArrowRight")move(2,1);
+});
+
+function startGame(){
+ if(running)return;
+ running=true;
+ scores=[0,0];
+ obstacles=[];
+ positions=[65,175];
+ document.getElementById("score1").innerText=0;
+ document.getElementById("score2").innerText=0;
+ document.getElementById("message").innerText="🏁 RACE STARTED!";
+ document.querySelectorAll(".car").forEach((car,i)=>{
+  car.style.left=positions[i]+"px";
+ });
+ document.querySelectorAll(".track").forEach(t=>{
+  t.querySelectorAll(".obstacle").forEach(o=>o.remove());
+ });
+ timer=setInterval(gameLoop,40);
+}
+
+function createObstacle(player){
+ let track=document.getElementById("track"+player);
+ let ob=document.createElement("div");
+ ob.className="obstacle";
+ ob.innerText="🚧";
+ ob.style.left=Math.floor(Math.random()*5)*50+5+"px";
+ ob.style.top="-70px";
+ track.appendChild(ob);
+ obstacles.push({el:ob,player:player,y:-70});
+}
+
+let frames=0;
+function gameLoop(){
+ frames++;
+ if(frames%35===0){
+  createObstacle(1);
+  createObstacle(2);
+ }
+ obstacles.forEach((o,index)=>{
+  o.y+=speed;
+  o.el.style.top=o.y+"px";
+  let carX=positions[o.player-1];
+  let obsX=parseInt(o.el.style.left);
+  if(o.y>370&&o.y<455&&Math.abs(carX-obsX)<45){
+   endGame(o.player===1?2:1);
+  }
+  if(o.y>480){
+   o.el.remove();
+   obstacles[index]=null;
+   scores[o.player-1]++;
+   document.getElementById("score"+o.player).innerText=
+   scores[o.player-1];
+  }
+ });
+ obstacles=obstacles.filter(o=>o!==null);
+ speed=Math.min(10,5+Math.floor(frames/1500));
+}
+
+function endGame(winner){
+ if(!running)return;
+ running=false;
+ clearInterval(timer);
+ document.getElementById("message").innerText=
+ "🏆 Player "+winner+" WINS!";
+}
+</script>
+</body>
+</html>
